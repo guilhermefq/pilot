@@ -42,6 +42,7 @@ import {
 import IconInfo from 'emblematic-icons/svg/Info32.svg'
 import IconCheck from 'emblematic-icons/svg/Check24.svg'
 import IconClearClose from 'emblematic-icons/svg/ClearClose24.svg'
+import DownloadIcon from 'emblematic-icons/svg/Download24.svg'
 import IconReverse from 'emblematic-icons/svg/Reverse24.svg'
 import ReprocessIcon from 'emblematic-icons/svg/Reprocess24.svg'
 import currencyFormatter from '../../formatters/currency'
@@ -171,6 +172,7 @@ const formatCustomerData = pipe(
   formatCustomerAddress
 )
 
+
 const getHeaderAmountLabel = (transaction, headerLabels) => {
   if (isBoletoTransaction(transaction)) {
     return headerLabels.boletoAmountLabel
@@ -252,7 +254,9 @@ const validateReprocessFunction = (props, propName) => {
 class TransactionDetails extends Component {
   constructor (props) {
     super(props)
-
+    this.state = {
+      expandAllRecipients: false,
+    }
     this.getActions = this.getActions.bind(this)
     this.renderAlertInfo = this.renderAlertInfo.bind(this)
     this.renderBoleto = this.renderBoleto.bind(this)
@@ -260,8 +264,19 @@ class TransactionDetails extends Component {
     this.renderOutAmountSubTitle = this.renderOutAmountSubTitle.bind(this)
     this.renderPayment = this.renderPayment.bind(this)
     this.renderPaymentCard = this.renderPaymentCard.bind(this)
+    this.handleAfterPrint = this.handleAfterPrint.bind(this)
+    this.handleExport = this.handleExport.bind(this)
   }
 
+  componentDidMount () {
+    window.addEventListener('afterprint', this.handleAfterPrint)
+    window.addEventListener('beforeprint', this.handleBeforePrint)
+  }
+
+  componentWillUnmount () {
+    window.removeEventListener('afterprint', this.handleAfterPrint)
+    window.removeEventListener('beforeprint', this.handleBeforePrint)
+  }
 
   getActions () {
     const {
@@ -277,6 +292,12 @@ class TransactionDetails extends Component {
         capabilities,
       },
     } = this.props
+
+    const onExportAction = {
+      icon: <DownloadIcon width={12} height={12} />,
+      onClick: this.handleExport,
+      title: 'Exportar',
+    }
 
     const onReprocessAction = {
       icon: <ReprocessIcon width={12} height={12} />,
@@ -324,12 +345,29 @@ class TransactionDetails extends Component {
           always(null)
         ),
         always(getManualReviewTransactionActions(transaction)),
+        always(onExportAction),
       ]),
       flatten,
       reject(isNil)
     )
 
     return detailsHeadActions(capabilities)
+  }
+
+
+  handleAfterPrint () {
+    this.setState({
+      expandAllRecipients: false,
+    })
+  }
+
+  handleExport (event) {
+    this.setState(
+      {
+        expandAllRecipients: true,
+      },
+      () => this.props.onExport(event)
+    )
   }
 
   renderAlertInfo () {
@@ -575,6 +613,23 @@ class TransactionDetails extends Component {
       tid: id,
     }
 
+    const formattedCustomer = formatCustomerData(customer || {})
+
+    const customerDetailsContent = {
+      name: formattedCustomer && formattedCustomer.name,
+      document_number: formattedCustomer && formattedCustomer.document_number,
+      birthday: formattedCustomer && formattedCustomer.birthday,
+      phone: formattedCustomer && formattedCustomer.phone,
+      email: formattedCustomer && formattedCustomer.email,
+      street: formattedCustomer && formattedCustomer.street,
+      street_number: formattedCustomer && formattedCustomer.street_number,
+      complementary: formattedCustomer && formattedCustomer.complementary,
+      neighborhood: formattedCustomer && formattedCustomer.neighborhood,
+      city: formattedCustomer && formattedCustomer.city,
+      state: formattedCustomer && formattedCustomer.state,
+      zipcode: formattedCustomer && formattedCustomer.zipcode,
+    }
+
     if (isEmpty(transaction)) {
       return (<div />)
     }
@@ -606,8 +661,8 @@ class TransactionDetails extends Component {
     }
 
     return (
-      <Grid>
-        <Row stretch>
+      <Grid className={style.grid}>
+        <Row stretch className={style.transactionInfo}>
           <Col
             desk={12}
             tv={12}
@@ -629,7 +684,7 @@ class TransactionDetails extends Component {
 
         {this.renderReprocessAlerts()}
 
-        <Row stretch>
+        <Row stretch className={style.paymentInfo}>
           <Col
             desk={3}
             palm={12}
@@ -644,7 +699,7 @@ class TransactionDetails extends Component {
             tablet={6}
             tv={3}
           >
-            <Card>
+            <Card className={style.paidAmountValue}>
               <CardContent className={style.content}>
                 <TotalDisplay
                   amount={payment.paid_amount}
@@ -661,7 +716,7 @@ class TransactionDetails extends Component {
             tablet={6}
             tv={3}
           >
-            <Card>
+            <Card className={style.outAmountValue}>
               <CardContent className={style.content}>
                 <TotalDisplay
                   amount={
@@ -684,7 +739,7 @@ class TransactionDetails extends Component {
             tablet={6}
             tv={3}
           >
-            <Card>
+            <Card className={style.netAmountValue}>
               <CardContent className={style.content}>
                 <TotalDisplay
                   amount={payment.net_amount}
@@ -723,9 +778,9 @@ class TransactionDetails extends Component {
             tablet={12}
             tv={9}
           >
-            <Grid>
+            <Grid className={style.detailsInfo}>
               {!isEmptyOrNull(recipients) &&
-                <Row>
+                <Row className={style.recipientsInfo}>
                   <Col
                     desk={12}
                     palm={12}
@@ -734,6 +789,7 @@ class TransactionDetails extends Component {
                   >
                     <RecipientList
                       collapseInstallmentTitle={recipientsLabels.collapseInstallmentTitle}
+                      expandAllRecipients={this.state.expandAllRecipients}
                       expandInstallmentTitle={recipientsLabels.expandInstallmentTitle}
                       installmentsTableColumns={installmentColumns}
                       installmentTotalLabel={recipientsLabels.installmentTotalLabel}
@@ -753,7 +809,7 @@ class TransactionDetails extends Component {
                 </Row>
               }
               {!isEmptyOrNull(customer) &&
-                <Row>
+                <Row className={style.customerInfo}>
                   <Col
                     desk={12}
                     palm={12}
@@ -761,14 +817,14 @@ class TransactionDetails extends Component {
                     tv={12}
                   >
                     <CustomerCard
-                      contents={formatCustomerData(customer)}
+                      contents={customerDetailsContent}
                       labels={customerLabels}
                       title={customerLabels.title}
                     />
                   </Col>
                 </Row>
               }
-              <Row>
+              <Row className={style.transactionCardInfo}>
                 <Col
                   desk={12}
                   palm={12}
@@ -804,6 +860,7 @@ class TransactionDetails extends Component {
             palm={12}
             tablet={12}
             tv={3}
+            className={style.eventsList}
           >
             <Card>
               <CardTitle title={eventsLabels.title} />
@@ -870,6 +927,7 @@ TransactionDetails.propTypes = {
   onManualReviewRefuse: PropTypes.func,
   onNextTransactionRedirect: validateNextTransactionRedirect,
   onPreviousTransactionRedirect: validatePreviousTransactionRedirect,
+  onExport: PropTypes.func,
   onRefund: validateRefundFunction,
   onReprocess: validateReprocessFunction,
   onShowBoleto: PropTypes.func,
