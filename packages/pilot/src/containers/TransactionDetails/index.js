@@ -753,7 +753,7 @@ class TransactionDetails extends Component {
         </Row>
 
         {showStatusAlert(transaction) &&
-          <Row>
+          <Row className={style.alertCustom}>
             <Col
               desk={12}
               palm={12}

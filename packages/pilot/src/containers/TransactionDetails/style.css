@@ -99,6 +99,16 @@
     }
   }
 
+  .alertCustom {
+    border-bottom: 1px solid var(--color-light-iron-50);
+    padding-top: var(--spacing-small);
+
+    & div {
+      border: none;
+      padding-top: var(--spacing-tiny);
+    }
+  }
+
   .detailsInfo {
     flex-direction: column-reverse;
     justify-content: space-between;
