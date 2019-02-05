@@ -164,3 +164,43 @@
 .active:not(:only-child):after {
   background-color: var(--color-white);
 }
+
+@media print {
+
+  .event {
+    align-items: baseline;
+    background: none;
+    display: flex;
+    padding: 0;
+    width: 100%;
+
+    /* stylelint-disable */
+    & > .header,
+    & .active + .event > .header {
+      padding-top: 0;
+    }
+    /* stylelint-enable*/
+  }
+
+  .title:before {
+    content: "-";
+  }
+
+  .header {
+    margin-right: var(--spacing-tiny);
+
+    & * {
+      background: none;
+      font-size: 16px;
+      text-transform: inherit;
+    }
+  }
+
+  .indicator {
+    display: none;
+  }
+
+  .event:not(:only-child):after {
+    display: none;
+  }
+}
