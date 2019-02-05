@@ -174,12 +174,14 @@
     padding: 0;
     width: 100%;
 
-    /* stylelint-disable */
+    /* stylelint-disable selector-max-class */
+
     & > .header,
     & .active + .event > .header {
       padding-top: 0;
     }
-    /* stylelint-enable*/
+
+    /* stylelint-enable selector-max-class */
   }
 
   .title:before {
